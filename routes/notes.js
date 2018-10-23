@@ -80,14 +80,37 @@ router.post('/', (req, res, next) => {
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
-  console.log('Update a Note');
-  res.json({ id: 1, title: 'Updated Temp 1' });
+  const toUpdate = {};
+  const updateableFields = ['title', 'content'];
+
+  updateableFields.forEach(field => {
+    if (field in req.body) {
+      toUpdate[field] = req.body[field];
+    }
+  });
+
+  Note.findByIdAndUpdate(req.params.id, { $set: toUpdate }, { new: true })
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
-  console.log('Delete a Note');
-  res.status(204).end();
+  Note.findByIdAndRemove(req.params.id)
+    .then(() => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 module.exports = router;
