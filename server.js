@@ -21,6 +21,8 @@ app.use(
 // Create a static webserver
 app.use(express.static('public'));
 
+
+
 // Parse request body
 app.use(express.json());
 
