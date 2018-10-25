@@ -4,17 +4,27 @@ const express = require('express');
 
 const router = express.Router();
 
-// const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const Note = require('../models/note');
+const Folder = require('../models/folder');
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const { searchTerm } = req.query;
-  const re = new RegExp(searchTerm, 'i');
+  const { folderId } = req.query;
+
+  console.log(req.body);
+
+  // const re = new RegExp(searchTerm, 'i');
   const filter = {};
 
   if (searchTerm) {
-    filter.title = re;
+    const re = new RegExp(searchTerm, 'i');
+    filter.$or = [{'title': re}, {'content': re } ];
+  }
+
+  if(folderId) {
+    filter.folderId = folderId;
   }
 
   Note.find(filter)
@@ -47,13 +57,21 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
+
   if (!('title' in req.body)) {
     const message = 'Missing `Title` in request body';
     return res.status(400).send(message);
   }
+  if(!(mongoose.Types.ObjectId.isValid(req.body.folderId))) {
+    const message = 'Folder Does Not Exist';
+    return res.status(400).send(message);
+  }  
+
+
   Note.create({
     title: req.body.title,
-    content: req.body.content
+    content: req.body.content,
+    folderId: req.body.folderId
   })
     .then(result => {
       if (result) {
@@ -73,7 +91,13 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const toUpdate = {};
-  const updateableFields = ['title', 'content'];
+  const updateableFields = ['title', 'content', 'folderId'];
+
+  if (!(mongoose.Types.ObjectId.isValid(req.body.folderId))) {
+    const message = 'Folder Does Not Exist';
+    return res.status(400).send(message);
+  }
+
 
   updateableFields.forEach(field => {
     if (field in req.body) {
