@@ -13,14 +13,14 @@ router.get('/', (req, res, next) => {
   const { searchTerm } = req.query;
   const { folderId } = req.query;
 
-  console.log(req.body);
 
-  // const re = new RegExp(searchTerm, 'i');
-  const filter = {};
+  let filter = {};
+  let sort = 'createdAt';
 
   if (searchTerm) {
     const re = new RegExp(searchTerm, 'i');
     filter.$or = [{'title': re}, {'content': re } ];
+    sort = 'id';
   }
 
   if(folderId) {
@@ -28,11 +28,10 @@ router.get('/', (req, res, next) => {
   }
 
   Note.find(filter)
+    .sort(sort)
     .then(notes => {
       if (notes) {
         res.json(notes);
-      } else {
-        next();
       }
     })
     .catch(err => {
@@ -58,9 +57,12 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
 
-  if (!('title' in req.body)) {
-    const message = 'Missing `Title` in request body';
-    return res.status(400).send(message);
+  const {title, content, folderId} = req.body;
+
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
   }
   if(!(mongoose.Types.ObjectId.isValid(req.body.folderId))) {
     const message = 'Folder Does Not Exist';
@@ -69,9 +71,9 @@ router.post('/', (req, res, next) => {
 
 
   Note.create({
-    title: req.body.title,
-    content: req.body.content,
-    folderId: req.body.folderId
+    title: title,
+    content: content,
+    folderId: folderId
   })
     .then(result => {
       if (result) {
@@ -79,9 +81,7 @@ router.post('/', (req, res, next) => {
           .location('path/to/new/document')
           .status(201)
           .json(result);
-      } else {
-        next();
-      }
+      } 
     })
     .catch(err => {
       next(err);
@@ -93,11 +93,16 @@ router.put('/:id', (req, res, next) => {
   const toUpdate = {};
   const updateableFields = ['title', 'content', 'folderId'];
 
-  if (!(mongoose.Types.ObjectId.isValid(req.body.folderId))) {
+  if (!(mongoose.Types.ObjectId.isValid(req.params.id))) {
     const message = 'Folder Does Not Exist';
     return res.status(400).send(message);
   }
 
+  if(!req.body.title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
 
   updateableFields.forEach(field => {
     if (field in req.body) {
