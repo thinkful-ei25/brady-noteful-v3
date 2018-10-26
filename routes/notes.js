@@ -33,7 +33,7 @@ router.get('/', (req, res, next) => {
 
   Note.find(filter)
     .sort(sort)
-    .populate('folders')
+    .populate({path: 'folderId', select:'name'})
     .populate('tags')
     .then(notes => {
       if (notes) {
