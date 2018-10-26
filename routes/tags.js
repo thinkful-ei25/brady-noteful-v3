@@ -38,11 +38,6 @@ router.get('/', (req, res, next) => {
 router.get('/:id', (req, res, next) => {
   objectIdTest(req.params.id, 'tag', next);
 
-  // if (!mongoose.Types.ObjectId.isValid(req.body.id)) {
-  //   const message = 'Does Not Exist';
-  //   return res.status(400).send(message);
-  // }
-
   Tag.findById(req.params.id)
     .then(result => {
       result ? res.status(200).json(result) : next();
@@ -55,12 +50,6 @@ router.post('/', (req, res, next) => {
   const { name } = req.body;
 
   fieldTest(name, 'Tag Name');
-
-  // if (!name) {
-  //   const err = new Error('Missing `name` in request body');
-  //   err.status = 400;
-  //   return next(err);
-  // }
 
   Tag.create({ name })
     .then(result => {
