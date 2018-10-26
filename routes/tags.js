@@ -5,6 +5,23 @@ const router = express.Router();
 
 const mongoose = require('mongoose');
 const Tag = require('../models/tag');
+const Note = require('../models/note');
+
+function objectIdTest(field, type, next) {
+  if(!mongoose.Types.ObjectId.isValid(field)){
+    const err = new Error(`The '${type}' is not valid`);
+    err.status = 400;
+    return next(err);
+  }
+}
+
+function fieldTest(field, type, next) {
+  if(!field) {
+    const err = new Error(`Missing '${type}' in request body`);
+    err.status = 400;
+    return next(err);
+  }
+}
 
 
 /* ========== GET/READ ALL TAGS ========== */
@@ -19,10 +36,12 @@ router.get('/', (req, res, next) => {
 
 // /* ========== GET/READ TAGS BY ID ========== */
 router.get('/:id', (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.body.id)) {
-    const message = 'Does Not Exist';
-    return res.status(400).send(message);
-  }
+  objectIdTest(req.params.id, 'tag', next);
+
+  // if (!mongoose.Types.ObjectId.isValid(req.body.id)) {
+  //   const message = 'Does Not Exist';
+  //   return res.status(400).send(message);
+  // }
 
   Tag.findById(req.params.id)
     .then(result => {
@@ -35,11 +54,13 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
   const { name } = req.body;
 
-  if (!name) {
-    const err = new Error('Missing `name` in request body');
-    err.status = 400;
-    return next(err);
-  }
+  fieldTest(name, 'Tag Name');
+
+  // if (!name) {
+  //   const err = new Error('Missing `name` in request body');
+  //   err.status = 400;
+  //   return next(err);
+  // }
 
   Tag.create({ name })
     .then(result => {
@@ -52,9 +73,8 @@ router.post('/', (req, res, next) => {
       if (err.code === 11000) {
         err = new Error('The tag name already exists');
         err.status(400);
-        next(err);
       }
-      next(err);
+      return next(err);
     });
 });
 
@@ -63,43 +83,40 @@ router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
 
-  if(req.body.id && id !== req.body.id) {
-    const err = new Error('IDs do not match');
-    err.status = 400;
-    return next(err);
-  }
 
-  if(!name) {
-    const err = new Error('Missing `name` in request body');
-    err.status = 400;
-    return next(err);
-  }
+  fieldTest(id, 'Tag', next);
+  fieldTest(name, 'Tag Name', next);
 
-  if (!mongoose.Types.ObjectId.isValid(req.body.id)) {
-    const message = 'Does Not Exist';
-    return res.status(400).send(message);
-  }
+  objectIdTest(id, 'Tag', next);
 
-  Tag.findByIdAndUpdate(id, {$set: {name: name }}, {next: true})
+
+  Tag.findByIdAndUpdate(id, {$set: {name: name}}, {new: true})
     .then(result => {
       result ? res.json(result) : next();
     })
     .catch(err => {
       if( err.code === 11000) {
         err = new Error('The tag name already exists :(');
-        err.status(400);
+        err.status = 400;
         next(err);
       }
       next(err);
     });
 });
+
 // /* ========== DELETE TAGS BY ID ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
 
-  Tag.delete(id)
+  objectIdTest(id, 'Tag');
+
+  Promise.all([
+    Tag.findByIdAndRemove(id),
+    Note.updateMany({tags: id}, {$pull: {tags:id}})
+  ])
     .then(() => res.sendStatus(204))
-    .catch(next);
+    .catch(err => next(err));
+
 });
 
 module.exports = router;
