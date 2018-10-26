@@ -181,11 +181,11 @@ describe('Noteful API Folder Tests', function () {
 
     it('should respond with a 404 for a non-existent id', function () {
 
-      const unrealId = 'A0A0A0000000000000000100';
+      const falseId = 'AbAbAb000000000000000100';
       const updatedFolder = { 'name': 'updated' };
 
       return chai.request(app)
-        .post(`/api/notes/${unrealId}`)
+        .post(`/api/notes/${falseId}`)
         .send(updatedFolder)
         .catch(err => err.response)
         .then(res => {
