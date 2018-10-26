@@ -9,8 +9,9 @@ const { TEST_MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
 const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
-const { notes, folders } = require('../db/seed/data');
+const { notes, folders, tags } = require('../db/seed/data');
 
 const expect = chai.expect;
 chai.use(chaiHttp);
@@ -26,7 +27,8 @@ describe('Noteful API Note Tests', function() {
   beforeEach(function() {
     const noteInsertPromise = Note.insertMany(notes);
     const folderInsertPromise = Folder.insertMany(folders);
-    return Promise.all([noteInsertPromise, folderInsertPromise]);
+    const tagsInsertPromise = Tag.insertMany(tags);
+    return Promise.all([noteInsertPromise, folderInsertPromise, tagsInsertPromise]);
   });
 
   afterEach(function() {
@@ -55,7 +57,8 @@ describe('Noteful API Note Tests', function() {
             'content',
             'folderId',
             'createdAt',
-            'updatedAt'
+            'updatedAt',
+            'tags'
           );
         });
       });
@@ -135,7 +138,8 @@ describe('Noteful API Note Tests', function() {
             'content',
             'folderId',
             'createdAt',
-            'updatedAt'
+            'updatedAt',
+            'tags'
           );
 
           expect(res.body.id).to.equal(data.id);
@@ -150,7 +154,12 @@ describe('Noteful API Note Tests', function() {
       const newNote = {
         title: 'Tyup testing',
         content: 'just testing away',
-        folderId: '111111111111111111111100'
+        folderId: '111111111111111111111100',
+        tags: [
+          '222222222222222222222200',
+          '222222222222222222222201',
+          '222222222222222222222202'
+        ]
       };
 
       let res;
@@ -170,7 +179,8 @@ describe('Noteful API Note Tests', function() {
             'content',
             'folderId',
             'createdAt',
-            'updatedAt'
+            'updatedAt',
+            'tags'
           );
           return Note.findById(res.body.id);
         })
@@ -202,7 +212,12 @@ describe('Noteful API Note Tests', function() {
     it('should update and return a note when provided valid inputs', function() {
       const updatedNote = {
         title: 'test updated note',
-        content: 'work'
+        content: 'work',
+        tags: [
+          '222222222222222222222200',
+          '222222222222222222222201',
+          '222222222222222222222202'
+        ]
       };
       let data;
       return Note.findOne()
@@ -223,7 +238,8 @@ describe('Noteful API Note Tests', function() {
             'content',
             'createdAt',
             'folderId',
-            'updatedAt'
+            'updatedAt',
+            'tags'
           );
 
           expect(res.body.id).to.equal(data.id);
