@@ -51,7 +51,7 @@ router.post('/', (req, res, next) => {
     .then(result => {
       if (result) {
         res
-          .location('path/to/new/document')
+          .location(`${req.baseUrl}/${result.id}`)
           .status(201)
           .json(result);
       } else {
